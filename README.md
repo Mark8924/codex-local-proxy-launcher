@@ -7,7 +7,7 @@
 
 <a id="中文"></a>
 
-给 Codex Desktop 准备的一个小启动器：先把本地代理写进当前进程环境，再启动 Codex。它只影响这一次启动出来的 Codex，不碰系统代理、不碰 TUN 路由、不改注册表，也不改 Codex 自己的配置文件。
+一个适用于 Codex Desktop 的跨平台代理启动器。它会在启动 Codex 前注入本地代理环境变量，并且只影响这一次启动出来的 Codex 进程；不会修改系统代理、TUN 路由、注册表，也不会改动 Codex 自己的配置文件。
 
 适合这种情况：Codex 桌面端连不上、反复 `Reconnecting`、WebSocket 失败，但你又不想为了它打开系统级代理或全局 TUN。
 
@@ -181,7 +181,7 @@ MIT
 
 <a id="english"></a>
 
-A small launcher for Codex Desktop. It sets local proxy environment variables first, then starts Codex. The change only applies to the Codex process started by this launcher. It does not touch system proxy settings, TUN routes, registry keys, or Codex configuration files.
+A cross-platform proxy launcher for Codex Desktop. It injects local proxy environment variables before starting Codex, and the change only applies to the Codex process started by this launcher. It does not touch system proxy settings, TUN routes, registry keys, or Codex configuration files.
 
 Use it when Codex Desktop cannot connect, keeps reconnecting, or fails WebSocket connections, and you do not want to enable a system-wide proxy or global TUN just for Codex.
 
