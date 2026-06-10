@@ -194,13 +194,6 @@ MIT
 
 <a id="english"></a>
 
-## English
-
-<p>
-  <a href="#中文">中文</a> |
-  <a href="#english">English</a>
-</p>
-
 A cross-platform proxy launcher for Codex Desktop. It injects proxy environment variables only into the Codex process. It does not modify system proxy settings, TUN routes, registry keys, or Codex configuration files.
 
 This is useful when Codex works inside VS Code because VS Code has its own proxy settings, but Codex Desktop cannot connect directly and keeps reconnecting or failing WebSocket connections.
