@@ -120,18 +120,33 @@ C:\Program Files\WindowsApps\OpenAI.Codex_*\app\Codex.exe
 
 ## 配置文件
 
-如果不想每次传端口，可以复制一份配置文件：
+如果不想每次传端口，可以用配置文件。双击 macOS `.app` 时尤其推荐这种方式。
+
+复制仓库里的示例配置：
 
 ```bash
 cp codex-proxy-launcher.env.example codex-proxy-launcher.env
+nano codex-proxy-launcher.env
 ```
 
-常用配置：
+或者直接创建用户级配置文件，放到这里后，launcher 放在哪都能读取：
+
+```bash
+nano ~/.codex-proxy-launcher.env
+```
+
+写入常用配置：
 
 ```env
 CODEX_PROXY_PORT=10808
 CODEX_PROXY_HOST=127.0.0.1
 CODEX_PROXY_SCHEME=http
+```
+
+Windows 用户也可以创建用户级配置：
+
+```powershell
+notepad "$env:USERPROFILE\.codex-proxy-launcher.env"
 ```
 
 启动器会读取这些位置：
@@ -300,10 +315,19 @@ C:\Program Files\WindowsApps\OpenAI.Codex_*\app\Codex.exe
 
 ## Config file
 
-To avoid passing the port every time, copy the example config:
+To avoid passing the port every time, use a config file. This is especially useful when opening the macOS `.app` directly.
+
+Copy the example config:
 
 ```bash
 cp codex-proxy-launcher.env.example codex-proxy-launcher.env
+nano codex-proxy-launcher.env
+```
+
+Or create a user-level config file directly, which works no matter where the launcher is located:
+
+```bash
+nano ~/.codex-proxy-launcher.env
 ```
 
 Common settings:
@@ -312,6 +336,12 @@ Common settings:
 CODEX_PROXY_PORT=10808
 CODEX_PROXY_HOST=127.0.0.1
 CODEX_PROXY_SCHEME=http
+```
+
+Windows users can also create a user-level config file:
+
+```powershell
+notepad "$env:USERPROFILE\.codex-proxy-launcher.env"
 ```
 
 The launcher reads config from:
