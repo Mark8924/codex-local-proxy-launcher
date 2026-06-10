@@ -1,13 +1,11 @@
 # codex-local-proxy-launcher
 
-<p align="right">
-  <a href="#中文"><kbd>中文</kbd></a>
-  <a href="#english"><kbd>English</kbd></a>
+<p>
+  <a href="#中文">中文</a> |
+  <a href="#english">English</a>
 </p>
 
 <a id="中文"></a>
-
-## 中文
 
 一个给 Codex Desktop 用的双端代理启动器。它只给 Codex 进程注入代理环境变量，不改系统代理、不改 TUN 路由、不改注册表、不改 Codex 配置。
 
@@ -198,9 +196,9 @@ MIT
 
 ## English
 
-<p align="right">
-  <a href="#中文"><kbd>中文</kbd></a>
-  <a href="#english"><kbd>English</kbd></a>
+<p>
+  <a href="#中文">中文</a> |
+  <a href="#english">English</a>
 </p>
 
 A cross-platform proxy launcher for Codex Desktop. It injects proxy environment variables only into the Codex process. It does not modify system proxy settings, TUN routes, registry keys, or Codex configuration files.
