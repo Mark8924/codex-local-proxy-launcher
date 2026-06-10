@@ -61,6 +61,12 @@ CODEX_PROXY_PORT=7890 ./macos/Launch\ Codex\ With\ Proxy.command
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
 ```
 
+仓库不会内置 Codex 官方图标。macOS 版首次启动时会从本机已安装的 Codex.app 复制图标到 launcher 里；如果 Finder 还显示默认应用图标，可以手动刷新一次：
+
+```bash
+./macos/Install\ Codex\ Icon.command
+```
+
 ## Windows
 
 默认端口 `10808`，直接双击：
@@ -233,6 +239,12 @@ If macOS blocks the app after download, right-click `Codex Launcher.app` and cho
 
 ```bash
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
+```
+
+The repository does not bundle the official Codex icon. On first launch, the macOS launcher copies the icon from the user's installed Codex.app. If Finder still shows the default app icon, refresh it manually:
+
+```bash
+./macos/Install\ Codex\ Icon.command
 ```
 
 ## Windows

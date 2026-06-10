@@ -9,6 +9,8 @@
   <string>Codex Launcher</string>
   <key>CFBundleExecutable</key>
   <string>Codex Launcher</string>
+  <key>CFBundleIconFile</key>
+  <string>icon.icns</string>
   <key>CFBundleIdentifier</key>
   <string>io.github.codex-proxy-launcher</string>
   <key>CFBundleInfoDictionaryVersion</key>
