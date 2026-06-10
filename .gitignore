@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+codex-proxy-launcher.env
+/.idea/
+/.vscode/
