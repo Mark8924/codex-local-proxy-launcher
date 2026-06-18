@@ -66,6 +66,58 @@ show_dialog() {
     "$message" >/dev/null
 }
 
+install_launcher_icon() {
+  local app_bundle resources_dir target_icon codex_contents_dir
+  local candidate icon_name icon_source
+
+  app_bundle="$(cd -- "${script_dir}/../.." && pwd)"
+  resources_dir="${app_bundle}/Contents/Resources"
+  target_icon="${resources_dir}/icon.icns"
+
+  [[ -f "$target_icon" ]] && return 0
+
+  codex_contents_dir="$(cd -- "$(dirname -- "$codex_app")/.." >/dev/null 2>&1 && pwd || true)"
+  icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "${codex_contents_dir}/Info.plist" 2>/dev/null || true)"
+  icon_source=""
+  if [[ -n "$icon_name" ]]; then
+    [[ "$icon_name" == *.icns ]] || icon_name="${icon_name}.icns"
+    icon_source="${codex_contents_dir}/Resources/${icon_name}"
+  fi
+
+  local candidates=(
+    "${CODEX_ICON_PATH:-}"
+    "$icon_source"
+    "${codex_contents_dir}/Resources/icon.icns"
+    "${codex_contents_dir}/Resources/app.icns"
+    "${codex_contents_dir}/Resources/electron.icns"
+    "/Applications/Codex.app/Contents/Resources/icon.icns"
+    "/Applications/Codex.app/Contents/Resources/app.icns"
+    "/Applications/Codex.app/Contents/Resources/electron.icns"
+    "${HOME}/Applications/Codex.app/Contents/Resources/icon.icns"
+    "${HOME}/Applications/Codex.app/Contents/Resources/app.icns"
+    "${HOME}/Applications/Codex.app/Contents/Resources/electron.icns"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -n "$candidate" && -f "$candidate" ]]; then
+      /bin/mkdir -p "$resources_dir" >/dev/null 2>&1 || return 0
+      if [[ -e "$target_icon" || -L "$target_icon" ]]; then
+        /bin/rm -f "$target_icon" >/dev/null 2>&1 || return 0
+      fi
+      /bin/cp "$candidate" "$target_icon" >/dev/null 2>&1 || return 0
+      /usr/bin/touch "$app_bundle" >/dev/null 2>&1 || true
+      /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+        -f "$app_bundle" >/dev/null 2>&1 || true
+      /usr/bin/osascript \
+        -e 'on run argv' \
+        -e 'tell application "Finder" to update POSIX file (item 1 of argv)' \
+        -e 'end run' \
+        "$app_bundle" >/dev/null 2>&1 || true
+      return 0
+    fi
+  done
+}
+
 if [[ -n "${CODEX_PROXY_CONFIG:-}" ]]; then
   load_config_file "$CODEX_PROXY_CONFIG"
 fi
@@ -101,6 +153,8 @@ if [[ ! -x "$codex_app" ]]; then
   show_dialog "Codex.app was not found at ${codex_app}. Set CODEX_APP_PATH if Codex is installed somewhere else."
   exit 1
 fi
+
+install_launcher_icon
 
 if ! /usr/bin/nc -z "$check_host" "$check_port" >/dev/null 2>&1; then
   show_dialog "Proxy ${check_host}:${check_port} is not listening. Start your proxy client first, then open Codex Launcher again."
