@@ -23,9 +23,15 @@ refresh_finder_icon() {
     "$app_bundle" >/dev/null 2>&1 || true
 }
 
-if [[ -f "$target_icon" ]]; then
+sign_launcher_app() {
+  /usr/bin/codesign --force --deep --sign - "$app_bundle"
+  /usr/bin/codesign --verify --deep --strict --verbose=2 "$app_bundle"
+}
+
+if [[ -f "$target_icon" && ! -L "$target_icon" ]]; then
+  sign_launcher_app
   refresh_finder_icon
-  /usr/bin/osascript -e 'display dialog "Codex Launcher icon is already available. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
+  /usr/bin/osascript -e 'display dialog "Codex Launcher icon is already available, and the app has been locally signed. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
   exit 0
 fi
 
@@ -57,8 +63,9 @@ for candidate in "${candidates[@]}"; do
       /bin/rm -f "$target_icon"
     fi
     /bin/cp "$candidate" "$target_icon"
+    sign_launcher_app
     refresh_finder_icon
-    /usr/bin/osascript -e 'display dialog "Codex Launcher icon installed. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
+    /usr/bin/osascript -e 'display dialog "Codex Launcher icon installed, and the app has been locally signed. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
     exit 0
   fi
 done

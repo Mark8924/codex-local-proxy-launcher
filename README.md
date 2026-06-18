@@ -39,6 +39,12 @@ macos/Codex Launcher.app
 
 这个 `.app` 使用 macOS 原生 universal 入口，支持 Apple Silicon 和 Intel Mac，不需要安装 Rosetta。
 
+仓库里的 `.app` 使用本地 ad-hoc 签名，方便 macOS 记住权限。它不是 Developer ID 签名，也没有 notarize；如果你改过 `.app` 内部文件，重新签一次：
+
+```bash
+./macos/Sign\ Codex\ Launcher.command
+```
+
 也可以从终端运行：
 
 ```bash
@@ -63,11 +69,13 @@ CODEX_PROXY_PORT=7890 ./macos/Launch\ Codex\ With\ Proxy.command
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
 ```
 
-仓库不会内置 Codex 官方图标。macOS 版默认用一个本机 symlink 指向 `/Applications/Codex.app` 里的图标；如果 Codex 装在别的位置，或者 Finder 还显示默认应用图标，可以手动刷新一次：
+仓库不会内置 Codex 官方图标，macOS 版默认也不会引用 `/Applications/Codex.app` 里的图标；正常启动不会写入或修改 `.app` 包。如果你想让启动器显示 Codex 图标，可以手动安装一次：
 
 ```bash
 ./macos/Install\ Codex\ Icon.command
 ```
+
+这个脚本会把本机 Codex 图标复制进 `Codex Launcher.app`，然后重新签名。它只需要在你想要图标时运行，代理启动功能不依赖它。
 
 ## Windows
 
@@ -236,6 +244,12 @@ macos/Codex Launcher.app
 
 This `.app` uses a native universal macOS entry point, so it works on Apple Silicon and Intel Macs without Rosetta.
 
+The `.app` in this repository is locally ad-hoc signed so macOS can remember permissions more reliably. It is not Developer ID signed or notarized. If you modify files inside the `.app`, sign it again:
+
+```bash
+./macos/Sign\ Codex\ Launcher.command
+```
+
 Or run from Terminal:
 
 ```bash
@@ -260,11 +274,13 @@ If macOS blocks the app after download, right-click `Codex Launcher.app` and cho
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
 ```
 
-The repository does not bundle the official Codex icon. The macOS app uses a local symlink to the icon inside `/Applications/Codex.app` by default. If Codex is installed somewhere else, or Finder still shows the default app icon, refresh it manually:
+The repository does not bundle the official Codex icon, and the macOS app does not reference the icon inside `/Applications/Codex.app` by default. Normal startup does not write to or modify the `.app` bundle. If you want the launcher to show the Codex icon, install it manually:
 
 ```bash
 ./macos/Install\ Codex\ Icon.command
 ```
+
+That script copies the local Codex icon into `Codex Launcher.app`, then signs the app again. You only need it if you care about the icon; proxy launching does not depend on it.
 
 ## Windows
 
