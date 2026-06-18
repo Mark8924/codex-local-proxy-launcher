@@ -1,5 +1,6 @@
 .DS_Store
 *.log
 codex-proxy-launcher.env
+macos/Codex Launcher.app/Contents/Resources/icon.icns
 /.idea/
 /.vscode/
