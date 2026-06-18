@@ -63,11 +63,13 @@ CODEX_PROXY_PORT=7890 ./macos/Launch\ Codex\ With\ Proxy.command
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
 ```
 
-仓库不会内置 Codex 官方图标。macOS 版默认用一个本机 symlink 指向 `/Applications/Codex.app` 里的图标；如果 Codex 装在别的位置，或者 Finder 还显示默认应用图标，可以手动刷新一次：
+仓库不会内置 Codex 官方图标。macOS 版默认用一个本机 symlink 指向 `/Applications/Codex.app` 里的图标；正常启动不会写入或修改 `.app` 包。如果 Codex 装在别的位置，或者 Finder 还显示默认应用图标，可以手动刷新一次：
 
 ```bash
 ./macos/Install\ Codex\ Icon.command
 ```
+
+这个图标安装脚本会写入 `Codex Launcher.app` 自己的资源目录，macOS 可能会请求一次应用管理权限；不想处理图标的话，可以不运行它，不影响代理启动功能。
 
 ## Windows
 
@@ -260,11 +262,13 @@ If macOS blocks the app after download, right-click `Codex Launcher.app` and cho
 xattr -dr com.apple.quarantine ./macos/Codex\ Launcher.app
 ```
 
-The repository does not bundle the official Codex icon. The macOS app uses a local symlink to the icon inside `/Applications/Codex.app` by default. If Codex is installed somewhere else, or Finder still shows the default app icon, refresh it manually:
+The repository does not bundle the official Codex icon. The macOS app uses a local symlink to the icon inside `/Applications/Codex.app` by default, and normal startup does not write to or modify the `.app` bundle. If Codex is installed somewhere else, or Finder still shows the default app icon, refresh it manually:
 
 ```bash
 ./macos/Install\ Codex\ Icon.command
 ```
+
+The icon installer writes into the `Codex Launcher.app` resource directory, so macOS may ask for App Management permission once. You can skip it if you do not care about the icon; the proxy launcher still works.
 
 ## Windows
 
