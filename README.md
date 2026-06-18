@@ -37,6 +37,8 @@ NO_PROXY
 macos/Codex Launcher.app
 ```
 
+这个 `.app` 使用 macOS 原生 universal 入口，支持 Apple Silicon 和 Intel Mac，不需要安装 Rosetta。
+
 也可以从终端运行：
 
 ```bash
@@ -231,6 +233,8 @@ Default port `10808`, open:
 ```text
 macos/Codex Launcher.app
 ```
+
+This `.app` uses a native universal macOS entry point, so it works on Apple Silicon and Intel Macs without Rosetta.
 
 Or run from Terminal:
 
