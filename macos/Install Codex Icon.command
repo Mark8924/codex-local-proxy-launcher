@@ -6,10 +6,36 @@ app_bundle="${script_dir}/Codex Launcher.app"
 resources_dir="${app_bundle}/Contents/Resources"
 target_icon="${resources_dir}/icon.icns"
 
-codex_app="${CODEX_APP_PATH:-/Applications/Codex.app/Contents/MacOS/Codex}"
-if [[ ! -x "$codex_app" && -x "${HOME}/Applications/Codex.app/Contents/MacOS/Codex" ]]; then
-  codex_app="${HOME}/Applications/Codex.app/Contents/MacOS/Codex"
-fi
+resolve_app_executable() {
+  local candidate executable_name executable_path
+  local candidates=(
+    "${CODEX_APP_PATH:-}"
+    "/Applications/ChatGPT.app"
+    "${HOME}/Applications/ChatGPT.app"
+    "/Applications/Codex.app"
+    "${HOME}/Applications/Codex.app"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    [[ -n "$candidate" ]] || continue
+    executable_path="$candidate"
+
+    if [[ -d "$candidate" && -f "${candidate}/Contents/Info.plist" ]]; then
+      executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${candidate}/Contents/Info.plist" 2>/dev/null || true)"
+      [[ -n "$executable_name" ]] || continue
+      executable_path="${candidate}/Contents/MacOS/${executable_name}"
+    fi
+
+    if [[ -x "$executable_path" ]]; then
+      printf "%s" "$executable_path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+codex_app="$(resolve_app_executable || true)"
 codex_contents_dir="$(cd -- "$(dirname -- "$codex_app")/.." >/dev/null 2>&1 && pwd || true)"
 
 refresh_finder_icon() {
@@ -48,6 +74,11 @@ candidates=(
   "${codex_contents_dir}/Resources/icon.icns"
   "${codex_contents_dir}/Resources/app.icns"
   "${codex_contents_dir}/Resources/electron.icns"
+  "${codex_contents_dir}/Resources/icon-chatgpt.icns"
+  "/Applications/ChatGPT.app/Contents/Resources/electron.icns"
+  "/Applications/ChatGPT.app/Contents/Resources/icon-chatgpt.icns"
+  "${HOME}/Applications/ChatGPT.app/Contents/Resources/electron.icns"
+  "${HOME}/Applications/ChatGPT.app/Contents/Resources/icon-chatgpt.icns"
   "/Applications/Codex.app/Contents/Resources/icon.icns"
   "/Applications/Codex.app/Contents/Resources/app.icns"
   "/Applications/Codex.app/Contents/Resources/electron.icns"
@@ -70,5 +101,5 @@ for candidate in "${candidates[@]}"; do
   fi
 done
 
-/usr/bin/osascript -e 'display dialog "Codex icon was not found. Install Codex.app first, or set CODEX_ICON_PATH to an .icns file." buttons {"OK"} default button "OK" with icon caution'
+/usr/bin/osascript -e 'display dialog "The ChatGPT/Codex icon was not found. Install the desktop app first, or set CODEX_ICON_PATH to an .icns file." buttons {"OK"} default button "OK" with icon caution'
 exit 1

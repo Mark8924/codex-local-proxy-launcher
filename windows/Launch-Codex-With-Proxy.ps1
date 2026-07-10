@@ -55,6 +55,7 @@ function Import-LauncherConfig {
                 "CODEX_PROXY_SCHEME",
                 "CODEX_PROXY_URL",
                 "CODEX_EXE",
+                "CHATGPT_EXE",
                 "CODEX_NO_PROXY"
             )
 
@@ -74,11 +75,19 @@ function Get-EnvOrDefault($name, $defaultValue) {
 }
 
 function Get-CodexExeCandidates {
+    if ($env:CHATGPT_EXE -and (Test-Path -LiteralPath $env:CHATGPT_EXE)) {
+        $env:CHATGPT_EXE
+    }
     if ($env:CODEX_EXE -and (Test-Path -LiteralPath $env:CODEX_EXE)) {
         $env:CODEX_EXE
     }
 
     $fixedPaths = @(
+        "$env:LOCALAPPDATA\Programs\ChatGPT\ChatGPT.exe",
+        "$env:LOCALAPPDATA\Programs\OpenAI ChatGPT\ChatGPT.exe",
+        "$env:LOCALAPPDATA\OpenAI\ChatGPT\ChatGPT.exe",
+        "$env:ProgramFiles\ChatGPT\ChatGPT.exe",
+        "${env:ProgramFiles(x86)}\ChatGPT\ChatGPT.exe",
         "$env:LOCALAPPDATA\Programs\Codex\Codex.exe",
         "$env:LOCALAPPDATA\Programs\OpenAI Codex\Codex.exe",
         "$env:LOCALAPPDATA\OpenAI\Codex\Codex.exe",
@@ -92,24 +101,49 @@ function Get-CodexExeCandidates {
         }
     }
 
-    try {
-        Get-AppxPackage -Name OpenAI.Codex -ErrorAction Stop |
-            Sort-Object Version -Descending |
-            ForEach-Object {
-                $exe = Join-Path $_.InstallLocation "app\Codex.exe"
-                if (Test-Path -LiteralPath $exe) {
-                    $exe
+    foreach ($packageName in @("OpenAI.ChatGPT", "OpenAI.Codex")) {
+        try {
+            Get-AppxPackage -Name $packageName -ErrorAction Stop |
+                Sort-Object Version -Descending |
+                ForEach-Object {
+                    $package = $_
+                    try {
+                        $manifest = Get-AppxPackageManifest -Package $package.PackageFullName -ErrorAction Stop
+                        foreach ($application in @($manifest.Package.Applications.Application)) {
+                            $relativeExe = [string]$application.Executable
+                            if ($relativeExe -match '(?i)(ChatGPT|Codex)\.exe$') {
+                                $manifestExe = Join-Path $package.InstallLocation $relativeExe
+                                if (Test-Path -LiteralPath $manifestExe) {
+                                    $manifestExe
+                                }
+                            }
+                        }
+                    } catch {
+                    }
+
+                    foreach ($relativePath in @("app\ChatGPT.exe", "app\Codex.exe", "ChatGPT.exe", "Codex.exe")) {
+                        $exe = Join-Path $package.InstallLocation $relativePath
+                        if (Test-Path -LiteralPath $exe) {
+                            $exe
+                        }
+                    }
                 }
-            }
-    } catch {
-        # Non-Store installs and older Windows builds may not have this package.
+        } catch {
+            # Non-Store installs and older Windows builds may not have this package.
+        }
     }
 
     $wildcards = @(
+        "$env:LOCALAPPDATA\Programs\*ChatGPT*\ChatGPT.exe",
+        "$env:LOCALAPPDATA\*ChatGPT*\ChatGPT.exe",
+        "$env:ProgramFiles\*ChatGPT*\ChatGPT.exe",
+        "${env:ProgramFiles(x86)}\*ChatGPT*\ChatGPT.exe",
         "$env:LOCALAPPDATA\Programs\*Codex*\Codex.exe",
         "$env:LOCALAPPDATA\*Codex*\Codex.exe",
         "$env:ProgramFiles\*Codex*\Codex.exe",
         "${env:ProgramFiles(x86)}\*Codex*\Codex.exe",
+        "$env:ProgramFiles\WindowsApps\OpenAI.ChatGPT_*\app\ChatGPT.exe",
+        "$env:ProgramFiles\WindowsApps\OpenAI.Codex_*\app\ChatGPT.exe",
         "$env:ProgramFiles\WindowsApps\OpenAI.Codex_*\app\Codex.exe"
     )
 
@@ -163,15 +197,15 @@ try {
     exit 1
 }
 
-if (Get-Process -Name Codex -ErrorAction SilentlyContinue) {
-    Show-Message "Codex is already running. Quit Codex completely, then launch it with Codex Launcher so it can inherit the proxy environment."
-    exit 1
-}
-
 $candidatePaths = @(Get-CodexExeCandidates | Select-Object -Unique)
 
 if (-not $candidatePaths) {
-    Show-Message "Codex.exe was not found. Microsoft Store installs are supported, but you can set CODEX_EXE if Codex is installed somewhere unusual."
+    Show-Message "ChatGPT.exe or Codex.exe was not found. Microsoft Store installs are supported, but you can set CHATGPT_EXE or CODEX_EXE if the app is installed somewhere unusual."
+    exit 1
+}
+
+if (Get-Process -Name ChatGPT, Codex -ErrorAction SilentlyContinue) {
+    Show-Message "ChatGPT or Codex is already running. Quit it completely, then use Codex Launcher so the new process can inherit the proxy environment."
     exit 1
 }
 

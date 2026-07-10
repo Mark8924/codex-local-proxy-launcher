@@ -66,6 +66,35 @@ show_dialog() {
     "$message" >/dev/null
 }
 
+resolve_app_executable() {
+  local candidate executable_name executable_path
+  local candidates=(
+    "${CODEX_APP_PATH:-}"
+    "/Applications/ChatGPT.app"
+    "${HOME}/Applications/ChatGPT.app"
+    "/Applications/Codex.app"
+    "${HOME}/Applications/Codex.app"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    [[ -n "$candidate" ]] || continue
+
+    executable_path="$candidate"
+    if [[ -d "$candidate" && -f "${candidate}/Contents/Info.plist" ]]; then
+      executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${candidate}/Contents/Info.plist" 2>/dev/null || true)"
+      [[ -n "$executable_name" ]] || continue
+      executable_path="${candidate}/Contents/MacOS/${executable_name}"
+    fi
+
+    if [[ -x "$executable_path" ]]; then
+      printf "%s" "$executable_path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 if [[ -n "${CODEX_PROXY_CONFIG:-}" ]]; then
   load_config_file "$CODEX_PROXY_CONFIG"
 fi
@@ -77,10 +106,7 @@ proxy_port="${1:-${CODEX_PROXY_PORT:-10808}}"
 proxy_host="${CODEX_PROXY_HOST:-127.0.0.1}"
 proxy_scheme="${CODEX_PROXY_SCHEME:-http}"
 proxy_url="${CODEX_PROXY_URL:-${proxy_scheme}://${proxy_host}:${proxy_port}}"
-codex_app="${CODEX_APP_PATH:-/Applications/Codex.app/Contents/MacOS/Codex}"
-if [[ ! -x "$codex_app" && -x "${HOME}/Applications/Codex.app/Contents/MacOS/Codex" ]]; then
-  codex_app="${HOME}/Applications/Codex.app/Contents/MacOS/Codex"
-fi
+codex_app="$(resolve_app_executable || true)"
 no_proxy_value="${CODEX_NO_PROXY:-localhost,127.0.0.1,::1}"
 
 check_host="$proxy_host"
@@ -98,7 +124,7 @@ if [[ ! "$check_port" == <-> ]]; then
 fi
 
 if [[ ! -x "$codex_app" ]]; then
-  show_dialog "Codex.app was not found at ${codex_app}. Set CODEX_APP_PATH if Codex is installed somewhere else."
+  show_dialog "ChatGPT.app or Codex.app was not found. Install the current desktop app, or set CODEX_APP_PATH to its .app bundle or executable."
   exit 1
 fi
 
@@ -107,8 +133,8 @@ if ! /usr/bin/nc -z "$check_host" "$check_port" >/dev/null 2>&1; then
   exit 1
 fi
 
-if /usr/bin/pgrep -x Codex >/dev/null 2>&1; then
-  show_dialog "Codex is already running. Quit Codex completely, then open Codex Launcher so it can inherit the proxy environment."
+if /usr/bin/pgrep -x ChatGPT >/dev/null 2>&1 || /usr/bin/pgrep -x Codex >/dev/null 2>&1; then
+  show_dialog "ChatGPT or Codex is already running. Quit it completely, then open Codex Launcher so the new process can inherit the proxy environment."
   exit 1
 fi
 
