@@ -1,64 +1,14 @@
 #!/bin/zsh
 set -euo pipefail
-setopt NO_BG_NICE 2>/dev/null || true
+setopt NO_BG_NICE
 
 script_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
 macos_dir="$(cd -- "${script_dir}/../../.." && pwd)"
-repo_dir="$(cd -- "${macos_dir}/.." && pwd)"
-
-trim() {
-  local value="$1"
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  printf "%s" "$value"
-}
-
-load_config_file() {
-  local file="$1"
-  local line key value
-
-  [[ -f "$file" ]] || return 0
-
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line%$'\r'}"
-    line="$(trim "${line%%#*}")"
-    [[ -z "$line" || "$line" != *=* ]] && continue
-
-    key="$(trim "${line%%=*}")"
-    value="$(trim "${line#*=}")"
-    value="${value#\"}"
-    value="${value%\"}"
-    value="${value#\'}"
-    value="${value%\'}"
-
-    case "$key" in
-      CODEX_PROXY_PORT)
-        [[ -z "${CODEX_PROXY_PORT:-}" ]] && export CODEX_PROXY_PORT="$value"
-        ;;
-      CODEX_PROXY_HOST)
-        [[ -z "${CODEX_PROXY_HOST:-}" ]] && export CODEX_PROXY_HOST="$value"
-        ;;
-      CODEX_PROXY_SCHEME)
-        [[ -z "${CODEX_PROXY_SCHEME:-}" ]] && export CODEX_PROXY_SCHEME="$value"
-        ;;
-      CODEX_PROXY_URL)
-        [[ -z "${CODEX_PROXY_URL:-}" ]] && export CODEX_PROXY_URL="$value"
-        ;;
-      CODEX_APP_PATH)
-        [[ -z "${CODEX_APP_PATH:-}" ]] && export CODEX_APP_PATH="$value"
-        ;;
-      CODEX_ICON_PATH)
-        [[ -z "${CODEX_ICON_PATH:-}" ]] && export CODEX_ICON_PATH="$value"
-        ;;
-      CODEX_NO_PROXY)
-        [[ -z "${CODEX_NO_PROXY:-}" ]] && export CODEX_NO_PROXY="$value"
-        ;;
-    esac
-  done < "$file"
-}
+source "${script_dir}/launcher-common.zsh"
 
 show_dialog() {
   local message="$1"
+  print -u2 -- "$message"
   /usr/bin/osascript \
     -e 'on run argv' \
     -e 'display dialog (item 1 of argv) buttons {"OK"} default button "OK" with icon caution' \
@@ -66,78 +16,30 @@ show_dialog() {
     "$message" >/dev/null
 }
 
-resolve_app_executable() {
-  local candidate executable_name executable_path
-  local candidates=(
-    "${CODEX_APP_PATH:-}"
-    "/Applications/ChatGPT.app"
-    "${HOME}/Applications/ChatGPT.app"
-    "/Applications/Codex.app"
-    "${HOME}/Applications/Codex.app"
-  )
-
-  for candidate in "${candidates[@]}"; do
-    [[ -n "$candidate" ]] || continue
-
-    executable_path="$candidate"
-    if [[ -d "$candidate" && -f "${candidate}/Contents/Info.plist" ]]; then
-      executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${candidate}/Contents/Info.plist" 2>/dev/null || true)"
-      [[ -n "$executable_name" ]] || continue
-      executable_path="${candidate}/Contents/MacOS/${executable_name}"
-    fi
-
-    if [[ -x "$executable_path" ]]; then
-      printf "%s" "$executable_path"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-if [[ -n "${CODEX_PROXY_CONFIG:-}" ]]; then
-  load_config_file "$CODEX_PROXY_CONFIG"
+if ! load_launcher_config "$macos_dir"; then
+  show_dialog "Cannot read the configuration specified by CODEX_PROXY_CONFIG."
+  exit 1
 fi
-load_config_file "${macos_dir}/codex-proxy-launcher.env"
-load_config_file "${repo_dir}/codex-proxy-launcher.env"
-load_config_file "${HOME}/.codex-proxy-launcher.env"
-
-proxy_port="${1:-${CODEX_PROXY_PORT:-10808}}"
-proxy_host="${CODEX_PROXY_HOST:-127.0.0.1}"
-proxy_scheme="${CODEX_PROXY_SCHEME:-http}"
-proxy_url="${CODEX_PROXY_URL:-${proxy_scheme}://${proxy_host}:${proxy_port}}"
-codex_app="$(resolve_app_executable || true)"
-no_proxy_value="${CODEX_NO_PROXY:-localhost,127.0.0.1,::1}"
-
-check_host="$proxy_host"
-check_port="$proxy_port"
-if [[ -n "${CODEX_PROXY_URL:-}" ]]; then
-  host_port="${proxy_url#*://}"
-  host_port="${host_port%%/*}"
-  check_host="${host_port%%:*}"
-  check_port="${host_port##*:}"
+if ! configure_proxy "${1:-}"; then
+  show_dialog "$proxy_error"
+  exit 1
 fi
-
-if [[ ! "$check_port" == <-> ]]; then
-  show_dialog "Invalid proxy port: ${check_port}"
+if ! codex_app="$(resolve_app_executable)"; then
+  show_dialog "ChatGPT.app or Codex.app was not found. Check CODEX_APP_PATH if set; it must point to an .app bundle or an executable file."
   exit 1
 fi
 
-if [[ ! -x "$codex_app" ]]; then
-  show_dialog "ChatGPT.app or Codex.app was not found. Install the current desktop app, or set CODEX_APP_PATH to its .app bundle or executable."
+running_pid="$(find_running_app "$codex_app" || true)"
+if [[ -n "$running_pid" ]]; then
+  show_dialog "${codex_app:t} is already running (PID $running_pid). Quit it completely, then open Codex Launcher so the new process can inherit the proxy environment."
   exit 1
 fi
-
-if ! /usr/bin/nc -z "$check_host" "$check_port" >/dev/null 2>&1; then
+if ! /usr/bin/nc -z -G 3 -w 3 "$check_host" "$check_port" >/dev/null 2>&1; then
   show_dialog "Proxy ${check_host}:${check_port} is not listening. Start your proxy client first, then open Codex Launcher again."
   exit 1
 fi
 
-if /usr/bin/pgrep -x ChatGPT >/dev/null 2>&1 || /usr/bin/pgrep -x Codex >/dev/null 2>&1; then
-  show_dialog "ChatGPT or Codex is already running. Quit it completely, then open Codex Launcher so the new process can inherit the proxy environment."
-  exit 1
-fi
-
+no_proxy_value="${CODEX_NO_PROXY:-localhost,127.0.0.1,::1}"
 export HTTP_PROXY="$proxy_url"
 export HTTPS_PROXY="$proxy_url"
 export ALL_PROXY="$proxy_url"
@@ -147,4 +49,18 @@ export https_proxy="$proxy_url"
 export all_proxy="$proxy_url"
 export no_proxy="$no_proxy_value"
 
-"$codex_app" >/tmp/codex-proxy-launcher.log 2>&1 &!
+log_file="$(/usr/bin/mktemp "${TMPDIR:-/tmp/}/codex-proxy-launcher.XXXXXXXX")"
+"$codex_app" >"$log_file" 2>&1 &
+launch_pid=$!
+/bin/sleep 0.3
+if [[ -n "$(jobs -r)" ]]; then
+  disown %1
+else
+  if wait "$launch_pid"; then
+    exit 0
+  else
+    launch_status=$?
+    show_dialog "${codex_app:t} failed to start (exit $launch_status). Details: $log_file"
+    exit "$launch_status"
+  fi
+fi

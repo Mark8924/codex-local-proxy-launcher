@@ -1,0 +1,36 @@
+name: Launcher tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check native entry and scripts
+        run: |
+          clang -Wall -Wextra -Werror -fsyntax-only macos/native-launcher/main.c
+          for script in macos/*.command macos/Codex\ Launcher.app/Contents/Resources/*.zsh; do
+            zsh -n "$script"
+          done
+          plutil -lint "macos/Codex Launcher.app/Contents/Info.plist"
+          codesign --verify --deep --strict --verbose=2 "macos/Codex Launcher.app"
+      - name: Run macOS regression tests
+        run: python3 -m unittest discover -s tests -p 'test_macos.py' -v
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        shell: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Windows regression tests
+        shell: ${{ matrix.shell }}
+        run: ./tests/windows.ps1

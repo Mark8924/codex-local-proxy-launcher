@@ -7,6 +7,8 @@
 
 <a id="中文"></a>
 
+下载：[最新 Release](https://github.com/Mark8924/codex-local-proxy-launcher/releases/latest)。macOS 和 Windows 分别下载对应的 ZIP，解压后打开其中的文件夹，再按下面的步骤使用。附件中的 `SHA256SUMS` 可用于校验下载包。
+
 一个适用于 Codex 桌面端的跨平台代理启动器。新版桌面应用可能显示并安装为 ChatGPT，启动器会自动识别新版 ChatGPT 和旧版 Codex。它会在启动应用前注入本地代理环境变量，并且只影响这一次启动出来的进程；不会修改系统代理、TUN 路由、注册表，也不会改动应用自己的配置文件。
 
 适合这种情况：Codex 桌面端连不上、反复 `Reconnecting`、WebSocket 失败，但你又不想为了它打开系统级代理或全局 TUN。
@@ -64,6 +66,8 @@ macos/Codex Launcher.app
 ```bash
 CODEX_PROXY_PORT=7890 ./macos/Launch\ Codex\ With\ Proxy.command
 ```
+
+`Codex Launcher.app` 可以单独移动；旁边的 `.command` 脚本需要和它放在同一个文件夹。升级时替换完整的 `.app`，保留自己的 `.env` 配置。
 
 如果 macOS 下载后拦截应用，右键 `Codex Launcher.app`，选择 **打开**。本地开发时也可以去掉 quarantine 标记：
 
@@ -126,6 +130,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\windows\Create-Codex-Launc
 
 Windows 版同时识别新版 `ChatGPT.exe` 和旧版 `Codex.exe`。Microsoft Store 安装也受支持，启动器会检查 `OpenAI.ChatGPT`、`OpenAI.Codex` AppX 包及其应用清单。
 
+请把 `windows` 文件夹中的脚本放在一起，其中 `Launcher.Common.ps1` 由启动脚本和快捷方式生成器共用。升级时替换整个文件夹内的脚本，保留自己的 `.env` 配置。代理变量只传给新打开的应用，不会留在调用它的 PowerShell 终端里。
+
 ```text
 C:\Program Files\WindowsApps\OpenAI.Codex_*\app\ChatGPT.exe
 C:\Program Files\WindowsApps\OpenAI.Codex_*\app\Codex.exe
@@ -162,13 +168,18 @@ Windows 用户也可以创建用户级配置：
 notepad "$env:USERPROFILE\.codex-proxy-launcher.env"
 ```
 
-启动器会读取这些位置：
+同一个配置项按以下顺序取第一个非空值：
 
-- 仓库根目录的 `codex-proxy-launcher.env`
+- 进程环境变量
+- `CODEX_PROXY_CONFIG` 指定的自定义配置文件
 - `macos/` 或 `windows/` 目录里的 `codex-proxy-launcher.env`
+- 仓库根目录的 `codex-proxy-launcher.env`
 - macOS 的 `~/.codex-proxy-launcher.env`
 - Windows 的 `%USERPROFILE%\.codex-proxy-launcher.env`
-- `CODEX_PROXY_CONFIG` 指定的自定义配置文件
+
+端口参数会覆盖 `CODEX_PROXY_PORT`。如果设置了 `CODEX_PROXY_URL`，则以该完整地址为准，忽略单独的主机、端口和协议设置。端口范围是 `1–65535`；IPv6 地址可写成 `CODEX_PROXY_HOST=::1`，或在完整 URL 中使用方括号，例如 `http://[::1]:7890`。
+
+配置支持 UTF-8、单引号、双引号和以空白开头的行尾注释；引号中的 `#` 会保留。需要认证的代理可以使用 `http://user:password@host:port`，用户名和密码中的特殊字符需做 URL 编码。
 
 更少见的情况可以直接覆盖完整代理地址或 Codex 路径：
 
@@ -179,6 +190,8 @@ CODEX_APP_PATH=/Applications/ChatGPT.app
 CHATGPT_EXE=C:\Path\To\ChatGPT.exe
 # CODEX_EXE=C:\Path\To\Codex.exe
 ```
+
+显式设置的应用路径无效时，启动器会报错。升级后如果安装位置改变，请更新或删除旧的路径配置。`Install Codex Icon.command` 也会读取以上配置，另支持 `CODEX_ICON_PATH` 指定本机 `.icns` 文件。
 
 ## 常见问题
 
@@ -215,6 +228,8 @@ MIT
 ---
 
 <a id="english"></a>
+
+Download the platform ZIP from the [latest Release](https://github.com/Mark8924/codex-local-proxy-launcher/releases/latest), extract it, open the extracted folder and follow the instructions below. `SHA256SUMS` contains the download checksums.
 
 A cross-platform proxy launcher for the Codex desktop experience. Newer desktop builds may be displayed and installed as ChatGPT; the launcher automatically detects both the current ChatGPT app and the legacy Codex app. It injects local proxy environment variables before starting the app, and the change only applies to that process. It does not touch system proxy settings, TUN routes, registry keys, or application configuration files.
 
@@ -273,6 +288,8 @@ Or set it temporarily with an environment variable:
 ```bash
 CODEX_PROXY_PORT=7890 ./macos/Launch\ Codex\ With\ Proxy.command
 ```
+
+You can move `Codex Launcher.app` on its own. The `.command` scripts must stay next to it. When upgrading, replace the complete `.app` and keep your `.env` configuration.
 
 If macOS blocks the app after download, right-click `Codex Launcher.app` and choose **Open**. For local development, you can also remove the quarantine flag:
 
@@ -335,6 +352,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\windows\Create-Codex-Launc
 
 The Windows launcher recognizes both the current `ChatGPT.exe` and the legacy `Codex.exe`. Microsoft Store installs are supported through the `OpenAI.ChatGPT` and `OpenAI.Codex` AppX packages and their application manifests.
 
+Keep the scripts in the `windows` folder together: both entry points use `Launcher.Common.ps1`. Replace all scripts when upgrading, retaining your `.env` configuration. Proxy variables are passed only to the new app process; the calling PowerShell session is unchanged.
+
 ```text
 C:\Program Files\WindowsApps\OpenAI.Codex_*\app\ChatGPT.exe
 C:\Program Files\WindowsApps\OpenAI.Codex_*\app\Codex.exe
@@ -371,13 +390,18 @@ Windows users can also create a user-level config file:
 notepad "$env:USERPROFILE\.codex-proxy-launcher.env"
 ```
 
-The launcher reads config from:
+For each setting, the first nonempty value wins in this order:
 
-- `codex-proxy-launcher.env` in the repository root
+- Process environment variables
+- A custom file specified by `CODEX_PROXY_CONFIG`
 - `codex-proxy-launcher.env` inside `macos/` or `windows/`
+- `codex-proxy-launcher.env` in the repository root
 - `~/.codex-proxy-launcher.env` on macOS
 - `%USERPROFILE%\.codex-proxy-launcher.env` on Windows
-- a custom file specified by `CODEX_PROXY_CONFIG`
+
+A port argument overrides `CODEX_PROXY_PORT`. When set, `CODEX_PROXY_URL` overrides the separate host, port and scheme settings. Ports must be in `1–65535`. For IPv6, use `CODEX_PROXY_HOST=::1` or a bracketed URL such as `http://[::1]:7890`.
+
+Config files support UTF-8, single and double quotes, and whitespace-prefixed trailing comments. Quoted `#` characters are preserved. Authenticated proxies can use `http://user:password@host:port`; URL-encode special characters in the credentials.
 
 Advanced overrides:
 
@@ -388,6 +412,8 @@ CODEX_APP_PATH=/Applications/ChatGPT.app
 CHATGPT_EXE=C:\Path\To\ChatGPT.exe
 # CODEX_EXE=C:\Path\To\Codex.exe
 ```
+
+Invalid explicit app paths are reported as errors. Remove or update a stale path override after the app moves. `Install Codex Icon.command` reads the same config and also accepts `CODEX_ICON_PATH` for a local `.icns` file.
 
 ## Troubleshooting
 

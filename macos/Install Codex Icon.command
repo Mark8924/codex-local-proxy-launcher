@@ -5,38 +5,14 @@ script_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
 app_bundle="${script_dir}/Codex Launcher.app"
 resources_dir="${app_bundle}/Contents/Resources"
 target_icon="${resources_dir}/icon.icns"
-
-resolve_app_executable() {
-  local candidate executable_name executable_path
-  local candidates=(
-    "${CODEX_APP_PATH:-}"
-    "/Applications/ChatGPT.app"
-    "${HOME}/Applications/ChatGPT.app"
-    "/Applications/Codex.app"
-    "${HOME}/Applications/Codex.app"
-  )
-
-  for candidate in "${candidates[@]}"; do
-    [[ -n "$candidate" ]] || continue
-    executable_path="$candidate"
-
-    if [[ -d "$candidate" && -f "${candidate}/Contents/Info.plist" ]]; then
-      executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${candidate}/Contents/Info.plist" 2>/dev/null || true)"
-      [[ -n "$executable_name" ]] || continue
-      executable_path="${candidate}/Contents/MacOS/${executable_name}"
-    fi
-
-    if [[ -x "$executable_path" ]]; then
-      printf "%s" "$executable_path"
-      return 0
-    fi
-  done
-
-  return 1
-}
+source "${resources_dir}/launcher-common.zsh"
+load_launcher_config "$script_dir"
 
 codex_app="$(resolve_app_executable || true)"
-codex_contents_dir="$(cd -- "$(dirname -- "$codex_app")/.." >/dev/null 2>&1 && pwd || true)"
+codex_contents_dir=""
+if [[ -n "$codex_app" ]]; then
+  codex_contents_dir="${codex_app:h:h}"
+fi
 
 refresh_finder_icon() {
   /usr/bin/touch "$app_bundle"
@@ -49,57 +25,38 @@ refresh_finder_icon() {
     "$app_bundle" >/dev/null 2>&1 || true
 }
 
-sign_launcher_app() {
-  /usr/bin/codesign --force --deep --sign - "$app_bundle"
-  /usr/bin/codesign --verify --deep --strict --verbose=2 "$app_bundle"
-}
-
-if [[ -f "$target_icon" && ! -L "$target_icon" ]]; then
-  sign_launcher_app
-  refresh_finder_icon
-  /usr/bin/osascript -e 'display dialog "Codex Launcher icon is already available, and the app has been locally signed. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
-  exit 0
-fi
-
 icon_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "${codex_contents_dir}/Info.plist" 2>/dev/null || true)"
-icon_source=""
-if [[ -n "$icon_name" ]]; then
-  [[ "$icon_name" == *.icns ]] || icon_name="${icon_name}.icns"
-  icon_source="${codex_contents_dir}/Resources/${icon_name}"
+if [[ -n "$icon_name" && "$icon_name" != *.icns ]]; then
+  icon_name="${icon_name}.icns"
 fi
 
 candidates=(
   "${CODEX_ICON_PATH:-}"
-  "$icon_source"
+  "${codex_contents_dir}/Resources/${icon_name}"
   "${codex_contents_dir}/Resources/icon.icns"
   "${codex_contents_dir}/Resources/app.icns"
   "${codex_contents_dir}/Resources/electron.icns"
   "${codex_contents_dir}/Resources/icon-chatgpt.icns"
-  "/Applications/ChatGPT.app/Contents/Resources/electron.icns"
-  "/Applications/ChatGPT.app/Contents/Resources/icon-chatgpt.icns"
-  "${HOME}/Applications/ChatGPT.app/Contents/Resources/electron.icns"
-  "${HOME}/Applications/ChatGPT.app/Contents/Resources/icon-chatgpt.icns"
-  "/Applications/Codex.app/Contents/Resources/icon.icns"
-  "/Applications/Codex.app/Contents/Resources/app.icns"
-  "/Applications/Codex.app/Contents/Resources/electron.icns"
-  "${HOME}/Applications/Codex.app/Contents/Resources/icon.icns"
-  "${HOME}/Applications/Codex.app/Contents/Resources/app.icns"
-  "${HOME}/Applications/Codex.app/Contents/Resources/electron.icns"
 )
+if [[ -n "${CODEX_ICON_PATH:-}" ]]; then
+  candidates=("$CODEX_ICON_PATH")
+fi
 
 for candidate in "${candidates[@]}"; do
-  if [[ -n "$candidate" && -f "$candidate" ]]; then
-    /bin/mkdir -p "$resources_dir"
-    if [[ -e "$target_icon" || -L "$target_icon" ]]; then
-      /bin/rm -f "$target_icon"
-    fi
-    /bin/cp "$candidate" "$target_icon"
-    sign_launcher_app
+  if [[ -f "$candidate" ]]; then
+    # Replace the directory entry, never write through an old icon symlink.
+    temporary_icon="$(/usr/bin/mktemp "${resources_dir}/.icon.XXXXXXXX")"
+    trap '/bin/rm -f "$temporary_icon"' EXIT
+    /bin/cp "$candidate" "$temporary_icon"
+    /bin/chmod 644 "$temporary_icon"
+    /bin/mv -f "$temporary_icon" "$target_icon"
+    /usr/bin/codesign --force --deep --sign - "$app_bundle"
+    /usr/bin/codesign --verify --deep --strict --verbose=2 "$app_bundle"
     refresh_finder_icon
-    /usr/bin/osascript -e 'display dialog "Codex Launcher icon installed, and the app has been locally signed. If Finder still shows the old icon, reopen this folder or relaunch Finder." buttons {"OK"} default button "OK"'
+    /usr/bin/osascript -e 'display dialog "Codex Launcher icon installed and the app locally signed. If Finder still shows the old icon, reopen this folder." buttons {"OK"} default button "OK"'
     exit 0
   fi
 done
 
-/usr/bin/osascript -e 'display dialog "The ChatGPT/Codex icon was not found. Install the desktop app first, or set CODEX_ICON_PATH to an .icns file." buttons {"OK"} default button "OK" with icon caution'
+/usr/bin/osascript -e 'display dialog "The ChatGPT/Codex icon was not found. Check CODEX_APP_PATH or CODEX_ICON_PATH in your launcher config." buttons {"OK"} default button "OK" with icon caution'
 exit 1

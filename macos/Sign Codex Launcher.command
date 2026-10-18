@@ -9,7 +9,11 @@ show_dialog() {
   local icon="${2:-note}"
   /usr/bin/osascript \
     -e 'on run argv' \
-    -e 'display dialog (item 1 of argv) buttons {"OK"} default button "OK" with icon (item 2 of argv)' \
+    -e 'if (item 2 of argv) is "caution" then' \
+    -e 'display dialog (item 1 of argv) buttons {"OK"} default button "OK" with icon caution' \
+    -e 'else' \
+    -e 'display dialog (item 1 of argv) buttons {"OK"} default button "OK" with icon note' \
+    -e 'end if' \
     -e 'end run' \
     "$message" "$icon" >/dev/null
 }

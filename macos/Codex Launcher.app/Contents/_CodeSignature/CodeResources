@@ -4,18 +4,29 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Resources/launcher-common.zsh</key>
+		<data>
+		PcEoFri3cE3Orgy5RuV81eSff4w=
+		</data>
 		<key>Resources/launcher.zsh</key>
 		<data>
-		Cyzz3kj7eFSq5yaGo0rRNAtS3is=
+		K2KSjWz8dopf9c0MrsjZoHISNnc=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>Resources/launcher-common.zsh</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			twfyjhlYQ0CHR3dNxi6QjFMPtOIoNh3OHOEXgH/UuwU=
+			</data>
+		</dict>
 		<key>Resources/launcher.zsh</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			3WdJXKgS0wr5oooNNYlE+KMxVWDuW6Tyfu528IoE/3U=
+			MBiNwPKHYbBPeT7zp/9PlCBjc133prs2Tu8wqQMIcRE=
 			</data>
 		</dict>
 	</dict>
