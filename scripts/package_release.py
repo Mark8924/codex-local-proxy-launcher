@@ -34,7 +34,7 @@ def main():
         directories = set()
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
             for mode, object_id, path in entries:
-                if path not in ("README.md", "LICENSE", "codex-proxy-launcher.env.example") and not path.startswith(platform + "/"):
+                if path not in ("README.md", "LICENSE", "codex-proxy-launcher.env.example") and not path.startswith((platform + "/", "docs/images/")):
                     continue
                 if mode not in ("100644", "100755"):
                     raise ValueError(f"Unexpected file type in release: {path}")

@@ -18,6 +18,10 @@
 
 **设置窗口是独立工具，不会在正常启动时弹出。** 保存一次后，继续使用原来的启动器即可，不需要编辑配置文件。建议把设置应用和启动器一起保留。
 
+在窗口上方修改端口后，点击 **保存设置**；更换图标则在下方选择样式，点击 **应用图标**。
+
+<img src="docs/images/macos-settings.png" alt="macOS 设置窗口：代理地址、端口和 ChatGPT、Codex、Space 图标选择" width="760">
+
 ### 换图标
 
 打开设置窗口，在 **ChatGPT、Codex、Space** 中选一个，点击“应用图标”。确认“启动器”一栏指向你实际使用的 `.app`，尤其是已固定到 Dock 的版本。
@@ -116,6 +120,10 @@ A cross-platform local proxy launcher for Codex Desktop, compatible with the cur
 3. Start your proxy client, fully quit ChatGPT/Codex, and open `Codex Launcher.app`. Pin this launcher to the Dock for normal use.
 
 **Settings is a separate app. It never opens during normal launching.** Save once, then keep using your original launcher. No manual config editing is needed.
+
+Edit the port at the top and click **Save Settings**. To change the icon, select a style below and click **Apply Icon**.
+
+<img src="docs/images/macos-settings.png" alt="macOS settings window: proxy host and port, with ChatGPT, Codex and Space icon choices" width="760">
 
 ### Icons
 
