@@ -32,5 +32,6 @@ jobs:
         shell: powershell
         run: ./tests/windows.ps1
       - name: Run PowerShell 7 regression tests
+        if: success() || failure()
         shell: pwsh
         run: ./tests/windows.ps1

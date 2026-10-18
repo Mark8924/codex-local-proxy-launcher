@@ -36,7 +36,11 @@ try {
         @("https://localhost/", "localhost", 443)
     )) {
         $proxy = Get-LauncherProxy @{ CODEX_PROXY_URL = $case[0] } "1234"
-        Assert-Equal $case[1] $proxy.HostName "URL host"
+        if ($case[1].Contains(":")) {
+            Assert-Equal $true ([Net.IPAddress]::Parse($case[1]).Equals([Net.IPAddress]::Parse($proxy.HostName))) "IPv6 URL host"
+        } else {
+            Assert-Equal $case[1] $proxy.HostName "URL host"
+        }
         Assert-Equal $case[2] $proxy.Port "URL port"
     }
     foreach ($proxyHost in @("::1", "[::1]")) {
