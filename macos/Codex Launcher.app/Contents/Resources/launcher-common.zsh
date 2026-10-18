@@ -25,7 +25,8 @@ load_config_file() {
       value="$(trim "${value%%[[:space:]]\#*}")"
     fi
     case "$key" in
-      CODEX_PROXY_PORT|CODEX_PROXY_HOST|CODEX_PROXY_SCHEME|CODEX_PROXY_URL|CODEX_APP_PATH|CODEX_ICON_PATH|CODEX_NO_PROXY)
+      CODEX_PROXY_PORT|CODEX_PROXY_HOST|CODEX_PROXY_SCHEME|CODEX_PROXY_URL|CODEX_APP_PATH|CODEX_ICON_PATH|CODEX_ICON_STYLE|CODEX_ICON_APPEARANCE|CODEX_NO_PROXY)
+        [[ "$key" == CODEX_APP_PATH && "${launcher_gui_app_auto:-0}" == 1 ]] && continue
         if [[ -z "${(P)key:-}" ]]; then
           export "$key=$value"
         fi
@@ -37,6 +38,20 @@ load_config_file() {
 
 load_launcher_config() {
   local platform_dir="$1"
+  local settings_file="${HOME}/Library/Application Support/codex-local-proxy-launcher/settings.json"
+  local key value
+  launcher_gui_app_auto=0
+  if [[ -f "$settings_file" ]]; then
+    for key in CODEX_PROXY_PORT CODEX_PROXY_HOST CODEX_PROXY_SCHEME CODEX_PROXY_URL CODEX_APP_PATH CODEX_NO_PROXY; do
+      value="$(/usr/bin/plutil -extract "$key" raw -o - "$settings_file" 2>/dev/null || true)"
+      if [[ -n "$value" && -z "${(P)key:-}" ]]; then
+        export "$key=$value"
+      fi
+    done
+    if [[ -z "${CODEX_APP_PATH:-}" ]] && /usr/bin/plutil -extract CODEX_APP_PATH raw -o /dev/null "$settings_file" 2>/dev/null; then
+      launcher_gui_app_auto=1
+    fi
+  fi
   if [[ -n "${CODEX_PROXY_CONFIG:-}" ]]; then
     if [[ ! -f "$CODEX_PROXY_CONFIG" ]]; then
       print -u2 -- "Config file not found: $CODEX_PROXY_CONFIG"

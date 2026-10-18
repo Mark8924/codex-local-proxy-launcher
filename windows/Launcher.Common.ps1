@@ -1,9 +1,26 @@
+function Get-LauncherSettingsPath {
+    $directory = [Environment]::GetFolderPath("ApplicationData")
+    if (-not $directory) { $directory = Join-Path $HOME ".config" }
+    return Join-Path $directory "codex-local-proxy-launcher/settings.json"
+}
+
 function Import-LauncherConfig([string]$ScriptDirectory) {
     $allowed = @(
         "CODEX_PROXY_PORT", "CODEX_PROXY_HOST", "CODEX_PROXY_SCHEME",
         "CODEX_PROXY_URL", "CODEX_EXE", "CHATGPT_EXE", "CODEX_NO_PROXY"
     )
     $config = @{}
+    $guiAppPath = $false
+    $settingsPath = Get-LauncherSettingsPath
+    if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
+        $settings = Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($property in $settings.PSObject.Properties) {
+            if ($property.Name -in @("CHATGPT_EXE", "CODEX_EXE")) { $guiAppPath = $true }
+            if ($allowed -contains $property.Name -and $property.Value) {
+                $config[$property.Name] = [string]$property.Value
+            }
+        }
+    }
     $paths = @()
     if ($env:CODEX_PROXY_CONFIG) {
         if (-not (Test-Path -LiteralPath $env:CODEX_PROXY_CONFIG -PathType Leaf)) {
@@ -26,6 +43,7 @@ function Import-LauncherConfig([string]$ScriptDirectory) {
             }
             $separator = $trimmed.IndexOf("=")
             $key = $trimmed.Substring(0, $separator).Trim()
+            if ($guiAppPath -and $key -in @("CHATGPT_EXE", "CODEX_EXE")) { continue }
             $value = $trimmed.Substring($separator + 1).Trim()
             if ($value -match '^"(.*)"(\s+#.*)?$' -or $value -match "^'(.*)'(\s+#.*)?$") {
                 $value = $Matches[1]

@@ -6,10 +6,12 @@ from pathlib import Path
 import plistlib
 import shutil
 import socket
+import struct
 import subprocess
 import tempfile
 import time
 import unittest
+import zlib
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +21,7 @@ LAUNCHER_KEYS = (
     "CODEX_PROXY_CONFIG", "CODEX_PROXY_PORT", "CODEX_PROXY_HOST",
     "CODEX_PROXY_SCHEME", "CODEX_PROXY_URL", "CODEX_APP_PATH",
     "CODEX_ICON_PATH", "CODEX_NO_PROXY",
+    "CODEX_ICON_STYLE", "CODEX_ICON_APPEARANCE",
 )
 
 
@@ -30,6 +33,7 @@ class LauncherTests(unittest.TestCase):
         self.env = dict(os.environ)
         for key in LAUNCHER_KEYS:
             self.env.pop(key, None)
+        self.env["HOME"] = str(self.temp)
 
     def shell(self, code, *args, env=None):
         return subprocess.run(
@@ -120,6 +124,92 @@ class LauncherTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Config file not found", result.stderr)
+
+    def test_gui_settings_override_legacy_config_but_not_environment(self):
+        preferences = self.temp / "Library/Application Support/codex-local-proxy-launcher/settings.json"
+        preferences.parent.mkdir(parents=True)
+        preferences.write_text(json.dumps({"CODEX_PROXY_PORT": "7890", "CODEX_APP_PATH": ""}))
+        (self.temp / "codex-proxy-launcher.env").write_text("CODEX_PROXY_PORT=10808\nCODEX_APP_PATH=/old/app")
+        result = self.shell('load_launcher_config "$2"; print "$CODEX_PROXY_PORT|${CODEX_APP_PATH:-auto}"', self.temp)
+        self.assertEqual(result.stdout.strip(), "7890|auto", result.stderr)
+        result = self.shell('load_launcher_config "$2"; print "$CODEX_PROXY_PORT"', self.temp,
+                            env={"CODEX_PROXY_PORT": "9999"})
+        self.assertEqual(result.stdout.strip(), "9999", result.stderr)
+
+    def make_png(self, path):
+        def chunk(kind, data):
+            return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
+        width = height = 1024
+        pixels = (b"\0" + b"\x30\xa0\x70\xff" * width) * height
+        path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+                         + chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b""))
+
+    def test_three_icon_styles_and_signature(self):
+        app, _, _ = self.make_app()
+        resources = app / "Contents/Resources"
+        resources.mkdir()
+        for name in ("icon-chatgpt.png", "icon-codex-light.png", "icon-codex-dark-color.png",
+                     "icon-space-light.png", "icon-space-dark.png"):
+            self.make_png(resources / name)
+        target = self.temp / "Icon target.app"
+        shutil.copytree(APP, target)
+        inode = target.stat().st_ino
+        script = APP / "Contents/Resources/launcher-icon.zsh"
+        for style, appearance in (("chatgpt", "light"), ("codex", "dark"), ("space", "light")):
+            result = subprocess.run(
+                ["/bin/zsh", str(script), "--app", str(target), "--style", style,
+                 "--appearance", appearance, "--no-dialog"],
+                env={**self.env, "CODEX_APP_PATH": str(app)}, capture_output=True, text=True, timeout=40,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(target.stat().st_ino, inode)
+            self.assertEqual((target / "Contents/Resources/icon.icns").read_bytes()[:4], b"icns")
+            subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)], check=True)
+
+    def test_icon_missing_asset_does_not_modify_launcher(self):
+        app, _, _ = self.make_app()
+        target = self.temp / "Missing icon target.app"
+        shutil.copytree(APP, target)
+        original = (target / "Contents/_CodeSignature/CodeResources").read_bytes()
+        result = subprocess.run(
+            ["/bin/zsh", str(APP / "Contents/Resources/launcher-icon.zsh"), "--app", str(target),
+             "--style", "space", "--no-dialog"],
+            env={**self.env, "CODEX_APP_PATH": str(app)}, capture_output=True, text=True, timeout=10,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Icon not found", result.stderr)
+        self.assertEqual((target / "Contents/_CodeSignature/CodeResources").read_bytes(), original)
+
+    def test_transaction_handles_finder_metadata_without_moving_dock_target(self):
+        target = self.temp / "Finder target.app"
+        shutil.copytree(APP, target)
+        inode = target.stat().st_ino
+        subprocess.run(["/usr/bin/xattr", "-wx", "com.apple.FinderInfo", "00" * 8 + "0400" + "00" * 22, str(target)], check=True)
+        quarantine = "0081;00000000;LauncherTest;"
+        subprocess.run(["/usr/bin/xattr", "-w", "com.apple.quarantine", quarantine, str(target)], check=True)
+        result = self.shell('source "$2"; replace_launcher_contents "$3" "$4"',
+                            APP / "Contents/Resources/launcher-maintenance.zsh", APP, target)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(target.stat().st_ino, inode)
+        self.assertNotIn("com.apple.FinderInfo", subprocess.check_output(["/usr/bin/xattr", str(target)], text=True))
+        self.assertEqual(subprocess.check_output(["/usr/bin/xattr", "-p", "com.apple.quarantine", str(target)], text=True).strip(), quarantine)
+        subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)], check=True)
+
+    def test_transaction_restores_contents_and_finder_metadata_on_failure(self):
+        target = self.temp / "Rollback target.app"
+        shutil.copytree(APP, target)
+        original = (target / "Contents/Info.plist").read_bytes()
+        finder_info = "00" * 8 + "0400" + "00" * 22
+        subprocess.run(["/usr/bin/xattr", "-wx", "com.apple.FinderInfo", finder_info, str(target)], check=True)
+        helper = self.temp / "fail-after-swap.zsh"
+        source = (APP / "Contents/Resources/launcher-maintenance.zsh").read_text()
+        helper.write_text(source.replace('/usr/bin/touch "$target_app"', 'false'))
+        result = self.shell('source "$2"; replace_launcher_contents "$3" "$4"', helper, APP, target)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((target / "Contents/Info.plist").read_bytes(), original)
+        restored = subprocess.check_output(["/usr/bin/xattr", "-px", "com.apple.FinderInfo", str(target)], text=True)
+        self.assertEqual("".join(restored.split()), finder_info)
+        self.assertEqual(list(self.temp.glob(".codex-launcher-update.*")), [])
 
     def make_app(self, exit_code=0):
         app = self.temp / "Example #1.app"

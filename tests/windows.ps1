@@ -14,6 +14,7 @@ function Assert-Throws([scriptblock]$Action, [string]$Label) {
 
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("launcher test " + [Guid]::NewGuid().ToString("N"))
 $null = New-Item -ItemType Directory -Path $temp
+function Get-LauncherSettingsPath { return Join-Path $temp "settings.json" }
 $keys = @(
     "CODEX_PROXY_CONFIG", "CODEX_PROXY_PORT", "CODEX_PROXY_HOST", "CODEX_PROXY_SCHEME",
     "CODEX_PROXY_URL", "CODEX_EXE", "CHATGPT_EXE", "CODEX_NO_PROXY",
@@ -83,6 +84,16 @@ CODEX_PROXY_PORT=9999
     Assert-Equal "1234" (Import-LauncherConfig $platform).CODEX_PROXY_PORT "Environment wins"
     $env:CODEX_PROXY_CONFIG = Join-Path $temp "missing.env"
     Assert-Throws { Import-LauncherConfig $platform } "Missing explicit config"
+    $env:CODEX_PROXY_CONFIG = $configFile
+    [Environment]::SetEnvironmentVariable("CODEX_PROXY_PORT", $null, "Process")
+    [IO.File]::WriteAllText((Get-LauncherSettingsPath), '{"CODEX_PROXY_PORT":"5678","CHATGPT_EXE":"","UNKNOWN":"ignored"}')
+    $guiConfig = Import-LauncherConfig $platform
+    Assert-Equal "5678" $guiConfig.CODEX_PROXY_PORT "GUI settings override legacy config"
+    Assert-Equal $false $guiConfig.ContainsKey("UNKNOWN") "GUI allowed keys"
+    Assert-Equal $false $guiConfig.ContainsKey("CHATGPT_EXE") "GUI empty app path restores automatic discovery"
+    Assert-Equal $false $guiConfig.ContainsKey("CODEX_EXE") "GUI empty app path ignores old overrides"
+    $env:CODEX_PROXY_PORT = "9999"
+    Assert-Equal "9999" (Import-LauncherConfig $platform).CODEX_PROXY_PORT "Environment overrides GUI settings"
 
     $fakeExe = Join-Path $temp "Example #1.exe"
     [IO.File]::WriteAllText($fakeExe, "")

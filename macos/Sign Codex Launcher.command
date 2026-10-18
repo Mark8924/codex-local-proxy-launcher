@@ -23,6 +23,8 @@ if [[ ! -d "$app_bundle" ]]; then
   exit 1
 fi
 
+source "$app_bundle/Contents/Resources/launcher-maintenance.zsh"
+clean_signing_metadata "$app_bundle"
 /usr/bin/codesign --force --deep --sign - "$app_bundle"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app_bundle"
 

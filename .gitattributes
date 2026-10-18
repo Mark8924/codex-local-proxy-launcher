@@ -1,6 +1,7 @@
 *.command text eol=lf
 *.zsh text eol=lf
 *.c text eol=lf
+*.swift text eol=lf
 *.py text eol=lf
 *.yml text eol=lf
 *.plist text eol=lf

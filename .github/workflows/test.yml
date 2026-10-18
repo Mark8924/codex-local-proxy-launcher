@@ -23,6 +23,13 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "macos/Codex Launcher.app"
       - name: Run macOS regression tests
         run: python3 -m unittest discover -s tests -p 'test_macos.py' -v
+      - name: Verify settings app
+        run: |
+          codesign --verify --deep --strict "macos/Codex Launcher Settings.app"
+          swiftc -typecheck macos/settings/main.swift
+          temp="$(mktemp -d)"
+          trap 'rm -rf "$temp"' EXIT
+          "macos/Codex Launcher Settings.app/Contents/MacOS/Launcher Settings" --self-test "$temp"
 
   windows:
     runs-on: windows-latest
@@ -35,3 +42,6 @@ jobs:
         if: success() || failure()
         shell: pwsh
         run: ./tests/windows.ps1
+      - name: Check Windows settings UI
+        shell: powershell
+        run: ./windows/Launcher-Settings.ps1 -SelfTest

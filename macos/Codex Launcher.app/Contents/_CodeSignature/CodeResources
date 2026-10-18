@@ -6,7 +6,19 @@
 	<dict>
 		<key>Resources/launcher-common.zsh</key>
 		<data>
-		PcEoFri3cE3Orgy5RuV81eSff4w=
+		47atDIBsI6O8ag60x0UQ70EnSWk=
+		</data>
+		<key>Resources/launcher-icon.zsh</key>
+		<data>
+		dcoLo/ILX2LSH1Zt6ysV+WzMULE=
+		</data>
+		<key>Resources/launcher-install.zsh</key>
+		<data>
+		dB3m7KVh6rSU7Tqm6VO75WwJiPY=
+		</data>
+		<key>Resources/launcher-maintenance.zsh</key>
+		<data>
+		it94FjGCTakx1fpAeG1ocqmnT5A=
 		</data>
 		<key>Resources/launcher.zsh</key>
 		<data>
@@ -19,7 +31,28 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			twfyjhlYQ0CHR3dNxi6QjFMPtOIoNh3OHOEXgH/UuwU=
+			1Pdtvc2S0Xc786SUalIethRKnGANlXR3GRuWafpDfj4=
+			</data>
+		</dict>
+		<key>Resources/launcher-icon.zsh</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			xJ7KVu2/PJcvkmhDdBmeRDv+LJBh13HCfpcdraFkdxY=
+			</data>
+		</dict>
+		<key>Resources/launcher-install.zsh</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			igYGZz7vwCBjAt9lyqRAlhm+99x/03eO5OmQNabeG0Q=
+			</data>
+		</dict>
+		<key>Resources/launcher-maintenance.zsh</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			P8el3P0wpDelVfuCKvebYjktaX1Ur9+c/cQsGyLwI2I=
 			</data>
 		</dict>
 		<key>Resources/launcher.zsh</key>
