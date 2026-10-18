@@ -20,7 +20,7 @@
 
 在窗口上方修改端口后，点击 **保存设置**；更换图标则在下方选择样式，点击 **应用图标**。
 
-<img src="docs/images/macos-settings.png" alt="macOS 设置窗口：代理地址、端口和 ChatGPT、Codex、Space 图标选择" width="760">
+<img src="docs/images/macos-settings.jpg" alt="macOS 设置窗口：代理地址、端口和 ChatGPT、Codex、Space 图标选择" width="760">
 
 ### 换图标
 
@@ -123,7 +123,7 @@ A cross-platform local proxy launcher for Codex Desktop, compatible with the cur
 
 Edit the port at the top and click **Save Settings**. To change the icon, select a style below and click **Apply Icon**.
 
-<img src="docs/images/macos-settings.png" alt="macOS settings window: proxy host and port, with ChatGPT, Codex and Space icon choices" width="760">
+<img src="docs/images/macos-settings.jpg" alt="macOS settings window: proxy host and port, with ChatGPT, Codex and Space icon choices" width="760">
 
 ### Icons
 
