@@ -26,11 +26,11 @@ jobs:
 
   windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        shell: [powershell, pwsh]
     steps:
       - uses: actions/checkout@v4
-      - name: Run Windows regression tests
-        shell: ${{ matrix.shell }}
+      - name: Run Windows PowerShell 5.1 regression tests
+        shell: powershell
+        run: ./tests/windows.ps1
+      - name: Run PowerShell 7 regression tests
+        shell: pwsh
         run: ./tests/windows.ps1
