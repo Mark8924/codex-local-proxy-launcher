@@ -16,5 +16,14 @@ done
 for name in launcher-common.zsh launcher-maintenance.zsh launcher-icon.zsh launcher-install.zsh; do
   /bin/cp "$resources/$name" "$app/Contents/Resources/$name"
 done
+iconset="$temporary/settings.iconset"
+/bin/mkdir -p "$iconset"
+for size in 16 32 128 256 512; do
+  /usr/bin/sips -z "$size" "$size" "$root/macos/settings/assets/settings-icon.png" \
+    --out "$iconset/icon_${size}x${size}.png" >/dev/null
+  /usr/bin/sips -z "$((size * 2))" "$((size * 2))" "$root/macos/settings/assets/settings-icon.png" \
+    --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+done
+/usr/bin/iconutil -c icns "$iconset" -o "$app/Contents/Resources/settings-icon.icns"
 /usr/bin/codesign --force --deep --sign - "$app"
 /usr/bin/codesign --verify --deep --strict "$app"

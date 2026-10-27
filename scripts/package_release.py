@@ -1,4 +1,4 @@
-"""Package committed files only, excluding local configs, icons and build debris."""
+"""Package committed files only, excluding local configs and build debris."""
 
 import hashlib
 from pathlib import Path

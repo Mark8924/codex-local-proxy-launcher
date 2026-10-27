@@ -20,6 +20,10 @@
 		<data>
 		it94FjGCTakx1fpAeG1ocqmnT5A=
 		</data>
+		<key>Resources/settings-icon.icns</key>
+		<data>
+		PkjoYeNmh1x4r+v1iPEh3HYayQw=
+		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
@@ -49,6 +53,13 @@
 			<key>hash2</key>
 			<data>
 			P8el3P0wpDelVfuCKvebYjktaX1Ur9+c/cQsGyLwI2I=
+			</data>
+		</dict>
+		<key>Resources/settings-icon.icns</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			M/HLQb1ZgACp5/QVziXF4ryxv2zDzSUiygMyhtzp+Uk=
 			</data>
 		</dict>
 	</dict>

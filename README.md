@@ -18,6 +18,8 @@
 
 **设置窗口是独立工具，不会在正常启动时弹出。** 保存一次后，继续使用原来的启动器即可，不需要编辑配置文件。建议把设置应用和启动器一起保留。
 
+设置应用采用带扳手的定制图标，方便与主启动器区分。主启动器的三套可选图标仍从本机获取。
+
 在窗口上方修改端口后，点击 **保存设置**；更换图标则在下方选择样式，点击 **应用图标**。
 
 <img src="docs/images/macos-settings.png" alt="macOS 设置窗口：代理地址、端口和 ChatGPT、Codex、Space 图标选择" width="760">
@@ -26,7 +28,7 @@
 
 打开设置窗口，在 **ChatGPT、Codex、Space** 中选一个，点击“应用图标”。确认“启动器”一栏指向你实际使用的 `.app`，尤其是已固定到 Dock 的版本。
 
-- 图标来自本机已安装的 ChatGPT，不打包、不在线下载；旧版应用缺少某套资源时会报错。
+- 这三套图标来自本机已安装的 ChatGPT，不打包、不在线下载；旧版应用缺少某套资源时会报错。
 - 只更换启动器图标，不修改 ChatGPT 本身，不需要关闭正在使用的 ChatGPT。
 - Codex、Space 默认采用切换时的系统外观，也可指定浅色或深色；之后不会随系统外观自动变化。
 - 在临时副本中生成图标、签名并校验后才替换，失败时回滚。应用目录及 Dock 固定入口保持不变。
@@ -121,6 +123,8 @@ A cross-platform local proxy launcher for Codex Desktop, compatible with the cur
 
 **Settings is a separate app. It never opens during normal launching.** Save once, then keep using your original launcher. No manual config editing is needed.
 
+Settings includes a custom wrench icon to distinguish it from the main launcher. The launcher's three selectable icons still come from the locally installed app.
+
 Edit the port at the top and click **Save Settings**. To change the icon, select a style below and click **Apply Icon**.
 
 <img src="docs/images/macos-settings.png" alt="macOS settings window: proxy host and port, with ChatGPT, Codex and Space icon choices" width="760">
@@ -129,7 +133,7 @@ Edit the port at the top and click **Save Settings**. To change the icon, select
 
 In Settings, choose **ChatGPT, Codex or Space** and click **Apply Icon**. Check that the launcher path points to the app you actually use, particularly a Dock-pinned installation.
 
-Assets come only from the locally installed ChatGPT app; they are not bundled or downloaded. Missing assets on older installations are reported. Only the launcher changes, not ChatGPT itself, which can keep running.
+These three icon styles come only from the locally installed ChatGPT app; they are not bundled or downloaded. Missing assets on older installations are reported. Only the launcher changes, not ChatGPT itself, which can keep running.
 
 Codex and Space use the system appearance at change time, with optional light/dark overrides. They do not automatically change afterward. Changes are staged, signed and verified, with rollback on failure. The app directory and Dock pin stay in place. Protected folders may require administrator approval. Icon caches may refresh later; Dock is not restarted.
 

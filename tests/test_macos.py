@@ -43,6 +43,27 @@ class LauncherTests(unittest.TestCase):
             capture_output=True, text=True, timeout=10,
         )
 
+    def test_settings_bundle_icon_and_version(self):
+        settings = ROOT / "macos/Codex Launcher Settings.app"
+        source = plistlib.loads((ROOT / "macos/settings/Info.plist").read_bytes())
+        bundled = plistlib.loads((settings / "Contents/Info.plist").read_bytes())
+        self.assertEqual(bundled, source)
+        launcher = plistlib.loads((APP / "Contents/Info.plist").read_bytes())
+        self.assertEqual(bundled["CFBundleShortVersionString"], launcher["CFBundleShortVersionString"])
+        icon = (settings / "Contents/Resources" / bundled["CFBundleIconFile"]).read_bytes()
+        self.assertEqual(icon[:4], b"icns")
+        self.assertEqual(struct.unpack(">I", icon[4:8])[0], len(icon))
+        offset = 8
+        representations = set()
+        while offset < len(icon):
+            kind, size = struct.unpack(">4sI", icon[offset:offset + 8])
+            self.assertGreaterEqual(size, 8)
+            self.assertLessEqual(offset + size, len(icon))
+            representations.add(kind)
+            offset += size
+        self.assertEqual(offset, len(icon))
+        self.assertTrue({b"ic07", b"ic08", b"ic09", b"ic10"} <= representations)
+
     def test_proxy_defaults_and_argument(self):
         result = self.shell('configure_proxy; print -r -- "$proxy_url|$check_host|$check_port"')
         self.assertEqual(result.returncode, 0, result.stderr)
