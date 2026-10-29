@@ -4,7 +4,7 @@
 
 <a id="中文"></a>
 
-为 macOS 和 Windows 上的 Codex 桌面端提供的本地代理启动器，兼容新版 ChatGPT 和旧版 Codex。它只为自己启动的应用设置代理，不会修改系统代理、TUN 路由、注册表，也不会改动 ChatGPT/Codex 的配置。
+为 macOS 和 Windows 上的 Codex 桌面端提供的本地代理启动器，兼容新版 ChatGPT 和旧版 Codex。它只为自己启动的应用设置代理，系统代理、TUN 路由、注册表和 ChatGPT/Codex 配置均不受影响。
 
 如果你已经开启了本地代理，桌面端却仍然无法连接、反复显示 `Reconnecting` 或 WebSocket 连接失败，可以试试这个工具。它本身不是代理客户端，需要配合 v2rayN、Clash 等代理工具使用。
 
@@ -32,8 +32,8 @@
 
 在设置窗口中选择 **ChatGPT**、**Codex** 或 **Space**，然后点击 **应用图标**。操作前请确认“启动器”一栏指向你实际使用的 `.app`，尤其是已固定到 Dock 的那一个。
 
-- **图标来源**：三套图标都取自本机已安装的 ChatGPT，项目既不打包，也不在线下载。旧版应用如果缺少某套图标资源，会直接报错。
-- **影响范围**：只更换启动器的图标，不修改 ChatGPT 本身，也不需要关闭正在使用的 ChatGPT。
+- **图标来源**：三套图标均从本机已安装的 ChatGPT 读取，不随项目分发。旧版应用如果缺少某套图标资源，会直接报错。
+- **影响范围**：只更换启动器的图标，ChatGPT 可以照常使用。
 - **浅色与深色**：Codex 和 Space 默认采用更换时的系统外观，也可以指定浅色或深色；之后不会随系统外观自动切换。
 - **安全替换**：先在临时副本中生成图标、签名并校验，通过后才替换，失败时回滚。应用目录和 Dock 固定入口保持不变。
 - **权限与缓存**：启动器位于受保护目录时，可能需要管理员确认。Finder 和 Dock 有图标缓存，新图标可能稍后才显示；工具不会重启 Dock。
@@ -44,15 +44,15 @@
 
 两个 `.app` 都是原生 universal 应用，同时支持 Apple Silicon 和 Intel，无需 Rosetta、Python 或其他运行时。它们使用本地 ad-hoc 签名，**没有 Developer ID 签名，也未经过公证（notarize）**。如果 macOS 拦截了下载的应用，请先确认应用来源，再按系统提示在“隐私与安全性”中允许打开。
 
-如果手动修改过启动器包内的文件，可以运行 `Sign Codex Launcher.command` 重新签名。签名前，脚本会清理妨碍签名的 Finder 图标元数据；它不会清除 quarantine，也不会修改系统安全设置。
+如果手动修改过启动器包内的文件，可以运行 `Sign Codex Launcher.command` 重新签名。签名前，脚本仅清理妨碍签名的 Finder 图标元数据，保留 quarantine 标记和现有安全设置。
 
 ## Windows
 
-1. 完整解压 `windows` 文件夹，不要把其中的脚本拆散。
+1. 完整解压 `windows` 文件夹，保持其中的脚本在同一目录。
 2. 如需修改代理（默认 `127.0.0.1:10808`），双击 `Open Launcher Settings.cmd`，填写地址和端口后保存。桌面应用路径可以留空，会自动查找。
 3. 先启动代理客户端，再完全退出 ChatGPT/Codex，然后双击 `Launch Codex With Proxy.cmd`。
 
-正常启动不会打开设置窗口，也无需手动编辑配置。支持 Windows PowerShell 5.1 和 PowerShell 7，也支持从 Microsoft Store 安装的新版 ChatGPT 和旧版 Codex。
+保存配置后，日常直接双击启动脚本即可使用。支持 Windows PowerShell 5.1 和 PowerShell 7，也支持从 Microsoft Store 安装的新版 ChatGPT 和旧版 Codex。
 
 如需创建桌面快捷方式，请运行：
 
@@ -60,7 +60,7 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File .\windows\Create-Codex-Launcher-Shortcut.ps1
 ```
 
-Windows 设置窗口提供代理配置和端口检测。三套官方图标的切换目前仅在 macOS 版中提供，因此 Windows 设置窗口不会显示这个无法使用的选项。
+Windows 设置窗口提供代理配置和端口检测。三套官方图标的切换目前仅在 macOS 版中提供。
 
 ## 常见问题
 
@@ -82,7 +82,7 @@ Windows 设置窗口提供代理配置和端口检测。三套官方图标的切
 正常使用时不需要打开这些文件。
 
 **关闭代理后，其他软件会断网吗？**
-不会因为这个启动器而断网。代理变量只传给它启动的 ChatGPT/Codex 进程，既不设置全局环境变量，也不会改变调用它的 PowerShell 环境。
+代理变量只作用于它启动的 ChatGPT/Codex 进程，全局环境变量、系统网络设置及调用它的 PowerShell 环境保持原样。
 
 <details>
 <summary>命令行用法与旧版配置兼容</summary>
@@ -178,7 +178,7 @@ The top of the window holds the proxy settings: after editing the port, click **
 In the settings window, choose **ChatGPT**, **Codex** or **Space**, then click **Apply Icon**. First check that the **Launcher** field points to the `.app` you actually use, particularly one pinned to the Dock.
 
 - **Source**: all three icons come from the ChatGPT app installed on your Mac; they are neither bundled nor downloaded. If an older installation is missing one of the icon sets, an error is reported.
-- **Scope**: only the launcher's icon changes. ChatGPT itself is not modified and does not need to be closed.
+- **Scope**: only the launcher's icon changes; ChatGPT can keep running.
 - **Light and dark**: Codex and Space follow the system appearance at the time you apply them, or you can choose light or dark explicitly. They do not change automatically when the system appearance changes later.
 - **Safe replacement**: the icon is generated, signed and verified in a temporary copy before it replaces the launcher, with rollback on failure. The app directory and Dock pin stay in place.
 - **Permissions and caching**: protected folders may require administrator approval. Finder and the Dock cache icons, so the new icon may take a moment to appear; the tool does not restart the Dock.
@@ -205,7 +205,7 @@ To create a desktop shortcut, run:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\windows\Create-Codex-Launcher-Shortcut.ps1
 ```
 
-The Windows settings window provides proxy configuration and port checking. Choosing among the three official icons is currently available only on macOS, so the Windows settings window does not show that unusable option.
+The Windows settings window provides proxy configuration and port checking. Choosing among the three official icons is currently available only on macOS.
 
 ## FAQ
 
